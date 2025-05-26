@@ -9,12 +9,12 @@ from itertools import product
 from mpl_toolkits.mplot3d import Axes3D
 import time
 
-# Rössler-System definieren
+# Define the Rössler system
 def rossler(t, u, a=0.2, b=0.2, c=5.7):
     x, y, z = u
     return [-y - z, x + a * y, b + z * (x - c)]
 
-# Rössler-Daten generieren
+# Generate Rössler data
 def generate_rossler_data():
     t_span = (0, 200)
     t_eval = np.arange(0, 200, 0.02)
@@ -22,7 +22,7 @@ def generate_rossler_data():
     sol = solve_ivp(rossler, t_span, u0, t_eval=t_eval)
     return sol.y.T  # shape: (time, 3)
 
-# Trainings- und Vorhersagefunktion mit Zeitmessung
+# Training and prediction function with timing
 def train_and_generate(params, X_train, Y_train, scaler, predict_len, test, test_scaled):
     set_seed(42)
     
@@ -36,7 +36,7 @@ def train_and_generate(params, X_train, Y_train, scaler, predict_len, test, test
     end_fit = time.perf_counter()
     print(f"      ⏱ Training duration: {end_fit - start_fit:.4f} seconds")
 
-    # Vorhersage
+    # Prediction
     outputs = []
     last_input = X_train[-1].reshape(1, -1)
     step_times = []
@@ -66,7 +66,7 @@ def train_and_generate(params, X_train, Y_train, scaler, predict_len, test, test
 
     return mse, mse_scaled, output, output_scaled
 
-# Daten vorbereiten
+# Prepare data
 data = generate_rossler_data()
 shift = 300
 train_len = 5000
@@ -76,13 +76,13 @@ X = data[shift:shift+train_len]
 Y = data[shift+1:shift+train_len+1]
 test = data[shift+train_len:shift+train_len+predict_len]
 
-# Skalieren
+# Scaling
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 Y_scaled = scaler.transform(Y)
 test_scaled = scaler.transform(test)
 
-# Parameter-Raum
+# Parameter grid
 param_grid = {
     'sr': [1.5],
     'lr': [0.2],
@@ -90,7 +90,7 @@ param_grid = {
     'ridge': [1e-2]
 }
 
-# Beste Parameter suchen
+# Search for best parameters
 best_mse = float('inf')
 best_mse_scaled = float('inf')
 best_params = None
@@ -123,7 +123,7 @@ for idx, (sr, lr, units, ridge) in enumerate(product(param_grid['sr'], param_gri
 total_end = time.perf_counter()
 print(f"\n⏱ Total runtime for all models: {total_end - total_start:.2f} seconds")
 
-# MSE pro Dimension berechnen
+# Compute MSE per dimension
 mse_x = mean_squared_error(test[:, 0], best_output[:, 0])
 mse_y = mean_squared_error(test[:, 1], best_output[:, 1])
 mse_z = mean_squared_error(test[:, 2], best_output[:, 2])
@@ -132,7 +132,7 @@ mse_scaled_x = mean_squared_error(test_scaled[:, 0], best_output_scaled[:, 0])
 mse_scaled_y = mean_squared_error(test_scaled[:, 1], best_output_scaled[:, 1])
 mse_scaled_z = mean_squared_error(test_scaled[:, 2], best_output_scaled[:, 2])
 
-# Visualisierung
+# Visualization
 fig = plt.figure(figsize=(12, 8))
 
 ax1 = fig.add_subplot(221)

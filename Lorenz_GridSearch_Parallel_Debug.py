@@ -9,7 +9,7 @@ from itertools import product
 from joblib import Parallel, delayed
 from mpl_toolkits.mplot3d import Axes3D
 
-# Lorenz-System
+# Lorenz system definition
 def lorenz(t, u, sigma=10., rho=28., beta=8/3):
     x, y, z = u
     return [
@@ -18,7 +18,7 @@ def lorenz(t, u, sigma=10., rho=28., beta=8/3):
         x * y - beta * z
     ]
 
-# Lorenz-Daten generieren
+# Generate Lorenz data
 def generate_lorenz_data():
     t_span = (0, 200)
     t_eval = np.arange(0, 200, 0.02)
@@ -26,7 +26,7 @@ def generate_lorenz_data():
     sol = solve_ivp(lorenz, t_span, u0, t_eval=t_eval)
     return sol.y.T  # shape: (time, 3)
 
-# Trainingsfunktion
+# Training function
 def train_and_generate(params, X_train, Y_train, scaler, predict_len, test, idx):
     set_seed(42)
     reservoir = Reservoir(units=params['units'], sr=params['sr'], lr=params['lr'])
@@ -49,15 +49,15 @@ def train_and_generate(params, X_train, Y_train, scaler, predict_len, test, idx)
     output_scaled = np.array(outputs)
     output = scaler.inverse_transform(output_scaled)
 
-    # 💥 Wichtige Prüfung: Ist die Vorhersage degeneriert (fast konstant)?
+    # ⚠️ Important check: Is the prediction degenerate (almost constant)?
     if np.all(np.std(output, axis=0) < 1e-4):
-        print(f"[{idx}] ❌ Degenerate output (almost constant): {np.std(output, axis=0)}")
+        print(f"[{idx}] ❌ Degenerate output detected (almost constant): {np.std(output, axis=0)}")
         return float('inf'), None, params, idx
 
     mse = mean_squared_error(test, output)
     return mse, output, params, idx
 
-# Daten vorbereiten
+# Prepare data
 data = generate_lorenz_data()
 shift = 300
 train_len = 5000
@@ -67,12 +67,12 @@ X = data[shift:shift+train_len]
 Y = data[shift+1:shift+train_len+1]
 test = data[shift+train_len:shift+train_len+predict_len]
 
-# Skalieren
+# Scale data
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 Y_scaled = scaler.transform(Y)
 
-# Reduzierter Parameter-Raum für schnellere Ausführung
+# Reduced parameter grid for faster execution
 param_grid = {
     'sr': [1.0, 1.1, 1.2, 1.3, 1.4, 1.5],
     'lr': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5],
@@ -80,7 +80,7 @@ param_grid = {
     'ridge': [1e-7, 1e-6, 1e-5]
 }
 
-# Parallel ausführen
+# Run training in parallel
 results = Parallel(n_jobs=-1)(
     delayed(train_and_generate)(
         {'sr': sr, 'lr': lr, 'units': units, 'ridge': ridge}, 
@@ -91,7 +91,7 @@ results = Parallel(n_jobs=-1)(
     )
 )
 
-# Bestes Ergebnis ermitteln
+# Find best result
 best_mse = float('inf')
 best_params = None
 best_output = None
@@ -106,7 +106,7 @@ for mse, output, params, idx in results:
         best_output = output
         best_idx = idx
 
-# Visualisierung
+# Visualize results
 mse_x = mean_squared_error(test[:, 0], best_output[:, 0])
 mse_y = mean_squared_error(test[:, 1], best_output[:, 1])
 mse_z = mean_squared_error(test[:, 2], best_output[:, 2])
@@ -114,27 +114,27 @@ mse_z = mean_squared_error(test[:, 2], best_output[:, 2])
 fig = plt.figure(figsize=(12, 8))
 
 ax1 = fig.add_subplot(221)
-ax1.plot(best_output[:, 0], label="pred x")
+ax1.plot(best_output[:, 0], label="predicted x")
 ax1.plot(test[:, 0], '--', label="true x")
 ax1.set_title(f"x(t) — MSE: {mse_x:.6f}")
 ax1.legend()
 
 ax2 = fig.add_subplot(222)
-ax2.plot(best_output[:, 1], label="pred y")
+ax2.plot(best_output[:, 1], label="predicted y")
 ax2.plot(test[:, 1], '--', label="true y")
 ax2.set_title(f"y(t) — MSE: {mse_y:.6f}")
 ax2.legend()
 
 ax3 = fig.add_subplot(223)
-ax3.plot(best_output[:, 2], label="pred z")
+ax3.plot(best_output[:, 2], label="predicted z")
 ax3.plot(test[:, 2], '--', label="true z")
 ax3.set_title(f"z(t) — MSE: {mse_z:.6f}")
 ax3.legend()
 
 ax4 = fig.add_subplot(224, projection='3d')
-ax4.plot(*best_output.T, label="predicted")
-ax4.plot(*test.T, linestyle="--", label="true")
-ax4.set_title(f"Lorenz attractor\nGesamt MSE: {best_mse:.6f}")
+ax4.plot(*best_output.T, label="predicted trajectory")
+ax4.plot(*test.T, linestyle="--", label="true trajectory")
+ax4.set_title(f"Lorenz attractor\nTotal MSE: {best_mse:.6f}")
 ax4.legend()
 
 plt.suptitle(f"Best Hyperparameters: sr={best_params['sr']}, lr={best_params['lr']}, "

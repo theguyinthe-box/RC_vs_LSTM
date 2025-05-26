@@ -10,7 +10,7 @@ readout = Ridge(ridge=1e-7)
 
 esn_model = data >> reservoir >> readout & data >> readout
 
-rpy.verbosity(0)  # no need to be too verbose here
+rpy.verbosity(0)
 rpy.set_seed(42)  # make everything reproducible!
 
 X = np.sin(np.linspace(0, 6*np.pi, 100)).reshape(-1, 1)

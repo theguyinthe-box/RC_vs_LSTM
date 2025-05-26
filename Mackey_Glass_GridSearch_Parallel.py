@@ -7,7 +7,7 @@ from sklearn.metrics import mean_squared_error
 from itertools import product
 from joblib import Parallel, delayed
 
-# Mackey-Glass-Generator
+# Mackey-Glass generator
 def mackey_glass(beta=0.2, gamma=0.1, n=10, tau=17, length=7000, dt=1.0):
     from collections import deque
     history = deque([1.2] * tau, maxlen=tau)
@@ -21,11 +21,11 @@ def mackey_glass(beta=0.2, gamma=0.1, n=10, tau=17, length=7000, dt=1.0):
         x.append(x_t1)
     return np.array(x)
 
-# Daten erzeugen
+# Generate data
 series = mackey_glass()
 series = series.reshape(-1, 1)
 
-# Daten vorbereiten
+# Prepare data
 shift = 0
 train_len = 5000
 predict_len = 1250
@@ -34,12 +34,12 @@ X = series[shift:shift+train_len]
 Y = series[shift+1:shift+train_len+1]
 test = series[shift+train_len:shift+train_len+predict_len]
 
-# Skalieren
+# Scale data
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 Y_scaled = scaler.transform(Y)
 
-# Grid Search Parameter-Raum definieren
+# Define Grid Search parameter space
 """param_grid = {
     'sr': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0],
     'lr': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
@@ -47,7 +47,7 @@ Y_scaled = scaler.transform(Y)
     'ridge': [1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2]
 }"""
 
-# Reduzierter Parameter-Raum für schnellere Ausführung
+# Reduced parameter space for faster execution
 param_grid = {
     'sr': [0.9, 1.0, 1.1, 1.2, 1.3],
     'lr': [0.0, 0.1, 0.2, 0.3],
@@ -55,7 +55,7 @@ param_grid = {
     'ridge': [1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2]
 }
 
-# Funktion für Training + generative Vorhersage + MSE
+# Function for training + generative prediction + MSE
 def train_and_generate(params, X_train, Y_train, scaler, predict_len, test, idx):
     set_seed(42)
     reservoir = Reservoir(units=params['units'], sr=params['sr'], lr=params['lr'])
@@ -77,13 +77,13 @@ def train_and_generate(params, X_train, Y_train, scaler, predict_len, test, idx)
     mse = mean_squared_error(test, output)
     return mse, output, params, idx
 
-# Beste Parameter suchen
+# Search for best parameters
 best_mse = float('inf')
 best_params = None
 best_output = None
 best_idx = None
 
-# Parallel Grid-Search
+# Parallel grid search
 results = Parallel(n_jobs=-1)(
     delayed(train_and_generate)(
         {'sr': sr, 'lr': lr, 'units': units, 'ridge': ridge},
@@ -94,7 +94,7 @@ results = Parallel(n_jobs=-1)(
     )
 )
 
-# Ergebnisse auswerten
+# Evaluate results
 for mse, output, params, idx in results:
     print(f"[{idx}] MSE: {mse:.6f} | Model params: {params}")
     if mse < best_mse:
