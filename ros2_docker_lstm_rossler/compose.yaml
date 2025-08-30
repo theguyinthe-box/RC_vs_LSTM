@@ -1,0 +1,22 @@
+services:
+  agent:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: ["/entrypoints/agent_entrypoint.sh"]
+    volumes:
+      - ./results:/results
+    networks:
+      - ros_docker_lstm_rossler
+
+  edge:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: ["/entrypoints/edge_entrypoint.sh"]
+    networks:
+      - ros_docker_lstm_rossler
+
+networks:
+  ros_docker_lstm_rossler:
+    name: ros_lstm_rossler

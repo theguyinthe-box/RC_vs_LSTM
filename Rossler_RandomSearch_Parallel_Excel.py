@@ -10,6 +10,7 @@ from joblib import Parallel, delayed
 from mpl_toolkits.mplot3d import Axes3D
 import time
 import random
+import pandas as pd
 
 # Define the Rössler system
 def rossler(t, u, a=0.2, b=0.2, c=5.7):
@@ -23,6 +24,22 @@ def generate_rossler_data():
     u0 = [0.1, 0.0, 0.0]
     sol = solve_ivp(rossler, t_span, u0, t_eval=t_eval)
     return sol.y.T  # shape: (time, 3)
+
+# Prepare data
+data = generate_rossler_data()
+shift = 300
+train_len = 5000
+predict_len = 500
+
+X = data[shift:shift+train_len]
+Y = data[shift+1:shift+train_len+1]
+test = data[shift+train_len:shift+train_len+predict_len]
+
+# Scaling
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+Y_scaled = scaler.transform(Y)
+test_scaled = scaler.transform(test)
 
 # Training and prediction function
 def train_and_generate(params, X_train, Y_train, scaler, predict_len, test, test_scaled, idx):
@@ -74,22 +91,6 @@ def train_and_generate(params, X_train, Y_train, scaler, predict_len, test, test
         "step_times": np.array(step_times)
     }
 
-# Prepare data
-data = generate_rossler_data()
-shift = 300
-train_len = 5000
-predict_len = 500
-
-X = data[shift:shift+train_len]
-Y = data[shift+1:shift+train_len+1]
-test = data[shift+train_len:shift+train_len+predict_len]
-
-# Scaling
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
-Y_scaled = scaler.transform(Y)
-test_scaled = scaler.transform(test)
-
 # Parameter space
 param_grid = {
     'sr': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0],
@@ -100,7 +101,7 @@ param_grid = {
 }
 
 # Number of random combinations
-n_samples = 20  # Adjust depending on runtime/performance
+n_samples = 200  # Adjust depending on runtime/performance
 
 # Generate random parameter combinations
 param_combinations = random.sample(
@@ -135,6 +136,53 @@ total_end = time.perf_counter()
 
 # Find best model
 best_result = min(results, key=lambda x: x["mse"])
+
+# Excel file
+excel_file = "rc_rossler_results.xlsx"
+
+# Convert results to DataFrame
+df = pd.DataFrame([
+    {
+        "idx": r["idx"],
+        "units": r["params"]["units"],
+        "sr": r["params"]["sr"],
+        "lr": r["params"]["lr"],
+        "ridge": r["params"]["ridge"],
+        "input_scaling": r["params"]["input_scaling"],
+        "mse": r["mse"],
+        "mse_scaled": r["mse_scaled"],
+        "fit_time_s": r["fit_time"],
+        "pred_time_s": r["pred_time"],
+        "avg_step_time_ms": r["step_times"].mean() * 1e3,
+        "min_step_time_ms": r["step_times"].min() * 1e3,
+        "max_step_time_ms": r["step_times"].max() * 1e3
+    }
+    for r in results
+])
+
+if "idx" in df.columns:
+    df = df.drop(columns=["idx"])
+
+# Try loading existing results
+try:
+    existing_df = pd.read_excel(excel_file)
+    combined_df = pd.concat([existing_df, df], ignore_index=True)
+    combined_df = combined_df.sort_values(
+    by=["mse"]
+).drop_duplicates(subset=["units", "sr", "lr", "ridge", "input_scaling"], keep="first")
+    df = combined_df  # work with the combined DataFrame from now on
+except FileNotFoundError:
+    pass
+
+# Sort
+df = df.sort_values(
+    by=["mse", "avg_step_time_ms", "units", "sr", "lr", "ridge", "input_scaling"]
+).reset_index(drop=True)
+
+# Export in Excel
+df.to_excel(excel_file, index=False, engine="openpyxl")
+
+print(f"Results successfully saved in: {excel_file}")
 
 # Results overview
 for r in results:
