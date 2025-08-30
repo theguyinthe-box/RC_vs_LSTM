@@ -1,0 +1,12 @@
+# Core dependencies
+reservoirpy==0.3.13
+numpy
+scipy
+scikit-learn
+joblib
+pandas
+matplotlib
+
+# ROS2 and communication (for Agent–Edge architecture)
+rclpy
+std-msgs
