@@ -9,6 +9,9 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install reservoirpy==0.3.13 scikit-learn asciichartpy pandas openpyxl
 
+# Make container cuda compatible
+RUN pip install -U "jax[cuda12]"
+
 # Set working directory
 WORKDIR /ros2_ws
 
