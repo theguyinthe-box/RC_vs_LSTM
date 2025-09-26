@@ -6,6 +6,9 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-colcon-common-extensions \
     && rm -rf /var/lib/apt/lists/*
+
+
+RUN pip install scikit-learn asciichartpy pandas openpyxl
     
 # Make container cuda compatible 
 RUN pip install -U "jax[cuda12]"
