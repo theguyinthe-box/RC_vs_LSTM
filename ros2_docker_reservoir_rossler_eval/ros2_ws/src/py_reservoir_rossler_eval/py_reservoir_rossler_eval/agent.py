@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray, String
+import jax
 import jax.numpy as np
 from scipy.integrate import solve_ivp
 from sklearn.preprocessing import StandardScaler

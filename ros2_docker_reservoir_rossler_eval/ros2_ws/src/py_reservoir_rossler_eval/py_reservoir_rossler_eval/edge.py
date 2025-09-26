@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray, String
+import jax
 import jax.numpy as np
 from reservoirpy.nodes import Reservoir, Ridge
 from reservoirpy import set_seed
