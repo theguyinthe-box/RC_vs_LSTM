@@ -3,7 +3,8 @@ from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray, String
 import jax
 import jax.numpy as np
-from py_reservoir_rossler_eval.reservoirpy.jax.nodes import Reservoir, Ridge
+from py_reservoir_rossler_eval.reservoirpy.jax.nodes.reservoir import Reservoir
+from py_reservoir_rossler_eval.reservoirpy.jax.nodes.ridge import Ridge
 from py_reservoir_rossler_eval.reservoirpy.datasets import set_seed
 import joblib
 import time
