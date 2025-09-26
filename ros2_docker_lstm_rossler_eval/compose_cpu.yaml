@@ -7,16 +7,18 @@ services:
     volumes:
       - ./results:/results
     networks:
-      - ros_docker_lstm_rossler
+      - ros_docker_lstm_rossler_eval
 
   edge:
     build:
       context: .
       dockerfile: docker/Dockerfile
     command: ["/entrypoints/edge_entrypoint.sh"]
+    volumes:
+    - ./hyperparams.xlsx:/hyperparams.xlsx:ro
     networks:
-      - ros_docker_lstm_rossler
+      - ros_docker_lstm_rossler_eval
 
 networks:
-  ros_docker_lstm_rossler:
-    name: ros_lstm_rossler
+  ros_docker_lstm_rossler_eval:
+    name: ros_lstm_rossler_eval
