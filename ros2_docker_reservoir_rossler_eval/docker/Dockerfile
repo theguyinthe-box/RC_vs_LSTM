@@ -27,6 +27,11 @@ RUN . /opt/ros/humble/setup.sh && \
     cd /ros2_ws && \
     colcon build
 
+# Make local reservoirpy package available to Python without pip
+# Copy the folder into the image and add it to PYTHONPATH so `import reservoirpy` works
+COPY ../reservoirpy /opt/reservoirpy
+ENV PYTHONPATH=/opt/reservoirpy:${PYTHONPATH}
+
 # Default entrypoint
 ENTRYPOINT ["/ros_entrypoint.sh"]
 CMD ["bash"]
