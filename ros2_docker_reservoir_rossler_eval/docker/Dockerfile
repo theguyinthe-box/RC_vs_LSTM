@@ -13,6 +13,11 @@ RUN pip install scikit-learn asciichartpy pandas openpyxl
 # Make container cuda compatible 
 RUN pip install -U "jax[cuda12]"
 
+# Make local reservoirpy package available to Python without pip
+# Copy the folder into the image and add it to PYTHONPATH so `import reservoirpy` works
+COPY ../reservoirpy /opt/reservoirpy
+ENV PYTHONPATH=/opt/reservoirpy:${PYTHONPATH}
+
 # Set working directory
 WORKDIR /ros2_ws
 
@@ -26,11 +31,6 @@ COPY ../entrypoints /entrypoints
 RUN . /opt/ros/humble/setup.sh && \
     cd /ros2_ws && \
     colcon build
-
-# Make local reservoirpy package available to Python without pip
-# Copy the folder into the image and add it to PYTHONPATH so `import reservoirpy` works
-COPY ../reservoirpy /opt/reservoirpy
-ENV PYTHONPATH=/opt/reservoirpy:${PYTHONPATH}
 
 # Default entrypoint
 ENTRYPOINT ["/ros_entrypoint.sh"]
