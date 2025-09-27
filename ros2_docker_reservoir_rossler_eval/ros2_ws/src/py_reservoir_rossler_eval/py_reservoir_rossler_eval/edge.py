@@ -146,7 +146,7 @@ class EdgeReservoirNode(Node):
             model = reservoir >> readout
 
             start_time = time.perf_counter()
-            model = model.fit(X, Y, warmup=100, reset=True)
+            model = model.fit(X, Y, warmup=100)#, reset=True) deprecated reset in modern respy
             training_duration = time.perf_counter() - start_time
 
             joblib.dump(model, self.model_path)
