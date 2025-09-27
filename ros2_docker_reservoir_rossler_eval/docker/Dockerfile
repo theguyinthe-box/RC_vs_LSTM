@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 
-RUN pip install scikit-learn asciichartpy pandas openpyxl
+RUN pip install scikit-learn asciichartpy pandas openpyxl cloudpickle
     
 # Make container cuda compatible with jax
 RUN pip install --no-cache-dir jax
