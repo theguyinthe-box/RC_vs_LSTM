@@ -1,8 +1,12 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray, String
+import jax
 import jax.numpy as np
-from reservoirpy import jax
+from reservoirpy.jax.nodes import Reservoir, Ridge
+from reservoirpy import set_seed
+import joblib
+import time
 import os
 import json
 from py_reservoir_rossler_eval.hyperparam_io import stream_hyperparams_xlsx
