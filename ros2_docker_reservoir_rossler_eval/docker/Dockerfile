@@ -23,8 +23,21 @@ WORKDIR /ros2_ws
 # Copy source code into the working directory
 COPY ../ros2_ws /ros2_ws
 
+COPY ../reservoirpy /ros2_ws/src/reservoirpy
+
 # Copy entrypoint scripts
 COPY ../entrypoints /entrypoints
+
+# Copy local reservoirpy into the image's site-packages so it's available like an installed package
+RUN python3 - <<'PY'
+import site, shutil, os
+src = '/ros2_ws/src/reservoirpy'
+dst = os.path.join(site.getsitepackages()[0], 'reservoirpy')
+print('Copying', src, 'to', dst)
+if os.path.exists(dst):
+    shutil.rmtree(dst)
+shutil.copytree(src, dst)
+PY
 ## Copy the local reservoirpy source into the ROS package so it's importable
 COPY ../reservoirpy /ros2_ws/src/py_reservoir_rossler_eval/py_reservoir_rossler_eval/reservoirpy
 
