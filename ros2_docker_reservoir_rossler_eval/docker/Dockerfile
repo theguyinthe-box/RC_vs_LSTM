@@ -16,8 +16,6 @@ RUN pip install -U "jax[cuda13]"
 
 # Make local reservoirpy package available to Python without pip
 # Copy the folder into the image and add it to PYTHONPATH so `import reservoirpy` works
-COPY ../reservoirpy /opt/reservoirpy
-ENV PYTHONPATH=/opt/reservoirpy:${PYTHONPATH}
 
 # Set working directory
 WORKDIR /ros2_ws
@@ -27,6 +25,8 @@ COPY ../ros2_ws /ros2_ws
 
 # Copy entrypoint scripts
 COPY ../entrypoints /entrypoints
+## Copy the local reservoirpy source into the ROS package so it's importable
+COPY ../reservoirpy /ros2_ws/src/py_reservoir_rossler_eval/py_reservoir_rossler_eval/reservoirpy
 
 # Build the ROS 2 workspace
 RUN . /opt/ros/humble/setup.sh && \
