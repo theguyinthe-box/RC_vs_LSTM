@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray, String
 import jax
-import jax.numpy as np
+import jax.numpy as jnp
 from reservoirpy.jax_respy.nodes import Reservoir, Ridge
 from reservoirpy import set_seed
 #import joblib
@@ -120,7 +120,7 @@ class EdgeReservoirNode(Node):
 
     def handle_input(self, msg):
         self.set_seed(42)
-        data = np.array(msg.data)
+        data = jnp.array(msg.data)
         expected_length = (self.train_len + self.train_len + self.pred_len) * 3
         if data.size != expected_length:
             self.get_logger().error(f"Unexpected input data length: {data.size}, expected: {expected_length}")
@@ -170,9 +170,9 @@ class EdgeReservoirNode(Node):
             self.get_logger().info(f"Model size published: {model_size_mb:.6f} MB")
 
         # Autoregressive prediction & timing
-        predictions = []
+        predictions = jnp.array([])
         last_input = X[-1].reshape(1, -1)
-        timings = []
+        timings = jnp.array([])
 
         for _ in range(test.shape[0]):
             start = time.perf_counter()
@@ -182,18 +182,18 @@ class EdgeReservoirNode(Node):
             predictions.append(pred.ravel())
             last_input = pred
 
-        avg_time = np.mean(np.array(timings))
-        min_time = np.min(np.array(timings))
-        max_time = np.max(np.array(timings))
+        avg_time = jnp.mean(timings)
+        min_time = jnp.min(timings)
+        max_time = jnp.max(timings)
 
         self.get_logger().info(
             f"Prediction time (per step): avg {avg_time*1000:.3f} ms | min {min_time*1000:.3f} ms | max {max_time*1000:.3f} ms"
         )
 
         # Publish predictions + timings
-        pred_array = np.array(predictions)
+        pred_array = jnp.array(predictions)
         msg_out = Float64MultiArray()
-        msg_out.data = np.concatenate([pred_array.flatten(), timings]).tolist()
+        msg_out.data = jnp.concatenate([pred_array.flatten(), timings]).tolist()
         self.publisher.publish(msg_out)
         self.get_logger().info(f"Published {len(pred_array)} predictions and {len(timings)} per-step latencies to Agent.")
 
