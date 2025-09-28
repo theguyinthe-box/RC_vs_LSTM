@@ -179,7 +179,7 @@ class EdgeReservoirNode(Node):
             pred = model.run(last_input)
             end = time.perf_counter()
             jnp.append(timings, end - start)
-            predictions.append(pred.ravel())
+            jnp.append(predictions, pred.ravel())
             last_input = pred
 
         avg_time = jnp.mean(timings)
