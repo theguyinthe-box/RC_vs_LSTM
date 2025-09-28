@@ -179,6 +179,7 @@ class EdgeReservoirNode(Node):
             pred = model.run(last_input)
             end = time.perf_counter()
             jnp.append(timings, end - start)
+            self.get_logger().info(f"timings = {timings}")
             jnp.append(predictions, pred.ravel())
             last_input = pred
 
