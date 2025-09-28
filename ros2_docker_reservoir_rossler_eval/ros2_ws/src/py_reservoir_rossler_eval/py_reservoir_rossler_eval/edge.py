@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float64MultiArray, String
+from std_msgs.msg import Float32MultiArray, String
 import jax
 import jax.numpy as jnp
 import reservoirpy.jax_respy.model
@@ -50,8 +50,8 @@ class EdgeReservoirNode(Node):
         self.load_next_hyperparams()
 
         # Publishers / Subscribers
-        self.subscription = self.create_subscription(Float64MultiArray, 'rossler_input', self.handle_input, 10)
-        self.publisher = self.create_publisher(Float64MultiArray, 'rossler_output', 10)
+        self.subscription = self.create_subscription(Float32MultiArray, 'rossler_input', self.handle_input, 10)
+        self.publisher = self.create_publisher(Float32MultiArray, 'rossler_output', 10)
         self.param_publisher = self.create_publisher(String, 'rossler_hyperparams', 10)
         self.training_time_pub = self.create_publisher(String, 'rossler_training_time', 10)
         self.model_size_pub = self.create_publisher(String, 'size_model', 10)
@@ -194,7 +194,7 @@ class EdgeReservoirNode(Node):
 
         # Publish predictions + timings
         pred_array = jnp.array(predictions)
-        msg_out = Float64MultiArray()
+        msg_out = Float32MultiArray()
         msg_out.data = jnp.concatenate([pred_array.flatten(), timings]).tolist()
         self.publisher.publish(msg_out)
         self.get_logger().info(f"Published {len(pred_array)} predictions and {len(timings)} per-step latencies to Agent.")

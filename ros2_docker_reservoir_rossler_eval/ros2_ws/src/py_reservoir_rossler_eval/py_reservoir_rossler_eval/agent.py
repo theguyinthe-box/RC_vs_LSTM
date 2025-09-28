@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float64MultiArray, String
+from std_msgs.msg import Float32MultiArray, String
 import jax
 import jax.numpy as jnp
 from scipy.integrate import solve_ivp
@@ -22,8 +22,8 @@ class AgentNode(Node):
         self.pause_sec = 1.0
 
         # Publishers & Subscribers
-        self.publisher = self.create_publisher(Float64MultiArray, 'rossler_input', 10)
-        self.subscription = self.create_subscription(Float64MultiArray, 'rossler_output', self.handle_prediction, 10)
+        self.publisher = self.create_publisher(Float32MultiArray, 'rossler_input', 10)
+        self.subscription = self.create_subscription(Float32MultiArray, 'rossler_output', self.handle_prediction, 10)
         self.subscription_params = self.create_subscription(String, 'rossler_hyperparams', self.handle_hyperparams, 10)
         self.subscription_training_time = self.create_subscription(String, 'rossler_training_time', self.handle_training_time, 10)
         self.subscription_model_size = self.create_subscription(String, 'size_model', self.handle_model_size, 10)
@@ -123,7 +123,7 @@ class AgentNode(Node):
 
     def send_data(self):
         if self.publisher.get_subscription_count() > 0:
-            msg = Float64MultiArray()
+            msg = Float32MultiArray()
             msg.data = jnp.concatenate([
                 self.X_scaled.flatten(),
                 self.Y_scaled.flatten(),
@@ -143,7 +143,7 @@ class AgentNode(Node):
         receive_time = time.perf_counter()
         roundtrip_time_s = receive_time - self.send_time if self.send_time is not None else float('nan')
 
-        data = jnp.array(msg.data, dtype=jnp.float64)
+        data = jnp.array(msg.data, dtype=jnp.float32)
         n_pred = self.pred_len * 3
 
         if data.size < n_pred:
