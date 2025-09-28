@@ -3,7 +3,8 @@ from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray, String
 import jax
 import jax.numpy as jnp
-from reservoirpy.jax_respy.nodes import Reservoir, Ridge
+from reservoirpy.jax_respy import Model
+from reservoirpy.jax_respy.nodes import NVAR, Ridge
 from reservoirpy import set_seed
 import joblib
 #import cloudpickle
@@ -133,14 +134,14 @@ class EdgeReservoirNode(Node):
         # Load or train model
         if os.path.exists(self.model_path):
             self.get_logger().info("Model loaded. No training required.")
-            model = joblib.load(self.model_path)
-            # with open(self.model_path, "rb") as f:
-            #     model = cloudpickle.load(f)
+            #model = joblib.load(self.model_path)
+            with open(self.model_path, "rb") as f:
+                 model = cloudpickle.load(f)
 
         else:
             self.get_logger().info("No model found. Starting training...")
 
-            reservoir = Reservoir(
+            reservoir = NVAR(
                 units=self.reservoir_params["units"],
                 sr=self.reservoir_params["spectral_radius"],
                 lr=self.reservoir_params["leaking_rate"],
@@ -150,7 +151,7 @@ class EdgeReservoirNode(Node):
             model = reservoir >> readout
 
             start_time = time.perf_counter()
-            model = model.fit(X, Y, warmup=100)#, reset=True) deprecated reset in modern respy
+            model = model.fit(X, Y, warmup=100)#, reset=True) deprecated reset in modern respy new function resets by default
             training_duration = time.perf_counter() - start_time
 
             joblib.dump(model, self.model_path)
