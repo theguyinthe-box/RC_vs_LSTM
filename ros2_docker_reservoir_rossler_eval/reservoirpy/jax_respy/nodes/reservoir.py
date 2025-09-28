@@ -164,7 +164,7 @@ class Reservoir(Node):
         bias: Union["Weights", Callable, float] = 0.0,
         activation: Union[str, Callable] = tanh,
         input_dim: Optional[int] = None,
-        dtype: type = jnp.float64,
+        dtype: type = jnp.float32,
         seed: Optional[Union[int, Generator]] = None,
         name: Optional[str] = None,
     ):
