@@ -3,8 +3,8 @@ from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray, String
 import jax
 import jax.numpy as jnp
-from reservoirpy.jax_respy import Model
-from reservoirpy.jax_respy.nodes import NVAR, Ridge
+import reservoirpy.jax_respy.model
+from reservoirpy.jax_respy.nodes import Reservoir, Ridge
 from reservoirpy import set_seed
 import joblib
 #import cloudpickle
@@ -141,7 +141,7 @@ class EdgeReservoirNode(Node):
         else:
             self.get_logger().info("No model found. Starting training...")
 
-            reservoir = NVAR(
+            reservoir = Reservoir(
                 units=self.reservoir_params["units"],
                 sr=self.reservoir_params["spectral_radius"],
                 lr=self.reservoir_params["leaking_rate"],
