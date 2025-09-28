@@ -182,9 +182,9 @@ class EdgeReservoirNode(Node):
             predictions.append(pred.ravel())
             last_input = pred
 
-        avg_time = np.mean(timings)
-        min_time = np.min(timings)
-        max_time = np.max(timings)
+        avg_time = np.mean(np.array(timings))
+        min_time = np.min(np.array(timings))
+        max_time = np.max(np.array(timings))
 
         self.get_logger().info(
             f"Prediction time (per step): avg {avg_time*1000:.3f} ms | min {min_time*1000:.3f} ms | max {max_time*1000:.3f} ms"
