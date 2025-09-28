@@ -12,7 +12,7 @@ RUN pip install scikit-learn asciichartpy pandas openpyxl cloudpickle
     
 # Make container cuda compatible with jax
 RUN pip install --no-cache-dir jax
-RUN pip install -U "jax[cuda13]"
+RUN pip install -U "jax[cuda12]"
 
 # Make local reservoirpy package available to Python without pip
 # Copy the folder into the image and add it to PYTHONPATH so `import reservoirpy` works
