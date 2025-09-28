@@ -155,7 +155,6 @@ class EdgeReservoirNode(Node):
 
             #joblib.dump(model, self.model_path)
             model_host = jax.device_get(model)    # convert DeviceArrays -> numpy arrays on host
-            print('saving model')
             with open(self.model_path, "wb") as f:
                 cloudpickle.dump(model_host, f)
 
@@ -174,9 +173,9 @@ class EdgeReservoirNode(Node):
         predictions = jnp.array([])
         last_input = X[-1].reshape(1, -1)
         timings = jnp.array([])
-        print('prediction and time var instantiated')
+        self.get_logger().info(f"prediction and time var instantiated")
         for _ in range(test.shape[0]):
-            print('in the prediciton loop')
+            self.get_logger().info(f"in pred loop")
             start = time.perf_counter()
             pred = model.run(last_input)
             end = time.perf_counter()
@@ -184,7 +183,7 @@ class EdgeReservoirNode(Node):
             jnp.append(predictions, pred.ravel())
             last_input = pred
 
-        print("out of prediction loop")
+        self.get_logger().info(f"out pred loop")
         avg_time = jnp.mean(timings)
         min_time = jnp.minimum(timings)
         max_time = jnp.maximum(timings)
