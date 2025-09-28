@@ -3,13 +3,13 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    # deploy:  
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: all
-    #           capabilities: [gpu]
+    deploy:  
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     command: ["/entrypoints/agent_entrypoint.sh"]
     volumes:
       - ./results:/results
@@ -20,13 +20,13 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    # deploy:  
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: all
-    #           capabilities: [gpu]
+    deploy:  
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     command: ["/entrypoints/edge_entrypoint.sh"]
     volumes:
       - ./hyperparams.xlsx:/hyperparams.xlsx:ro
