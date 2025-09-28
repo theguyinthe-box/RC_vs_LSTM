@@ -170,11 +170,13 @@ class EdgeReservoirNode(Node):
             self.get_logger().info(f"Model size published: {model_size_mb:.6f} MB")
 
         # Autoregressive prediction & timing
+        print('in the prediciton loop')
         predictions = jnp.array([])
         last_input = X[-1].reshape(1, -1)
         timings = jnp.array([])
-
+        print('prediction and time var instantiated')
         for _ in range(test.shape[0]):
+            print('in the prediciton loop')
             start = time.perf_counter()
             pred = model.run(last_input)
             end = time.perf_counter()
@@ -182,6 +184,7 @@ class EdgeReservoirNode(Node):
             jnp.append(predictions, pred.ravel())
             last_input = pred
 
+        print("out of prediction loop")
         avg_time = jnp.mean(timings)
         min_time = jnp.minimum(timings)
         max_time = jnp.maximum(timings)
