@@ -155,6 +155,7 @@ class EdgeReservoirNode(Node):
 
             #joblib.dump(model, self.model_path)
             model_host = jax.device_get(model)    # convert DeviceArrays -> numpy arrays on host
+            print('saving model')
             with open(self.model_path, "wb") as f:
                 cloudpickle.dump(model_host, f)
 
@@ -170,7 +171,6 @@ class EdgeReservoirNode(Node):
             self.get_logger().info(f"Model size published: {model_size_mb:.6f} MB")
 
         # Autoregressive prediction & timing
-        print('in the prediciton loop')
         predictions = jnp.array([])
         last_input = X[-1].reshape(1, -1)
         timings = jnp.array([])
