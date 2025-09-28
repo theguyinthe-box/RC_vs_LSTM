@@ -180,10 +180,9 @@ class EdgeReservoirNode(Node):
             end = time.perf_counter()
             timings = jnp.append(timings, end - start)
             predictions = jnp.append(predictions, pred.ravel())
-            self.get_logger().info(f"pred = {predictions} timings = {timings}")
             last_input = pred
 
-        self.get_logger().info(f"out pred loop")
+        
         avg_time = jnp.mean(timings)
         min_time = jnp.min(timings)
         max_time = jnp.max(timings)
