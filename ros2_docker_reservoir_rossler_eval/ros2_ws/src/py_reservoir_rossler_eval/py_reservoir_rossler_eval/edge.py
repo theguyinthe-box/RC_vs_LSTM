@@ -155,7 +155,7 @@ class EdgeReservoirNode(Node):
 
             #joblib.dump(model, self.model_path)
             model_host = jax.device_get(model)    # convert DeviceArrays -> numpy arrays on host
-            with open("/ros2_ws/model.pkl", "wb") as f:
+            with open(self.model_path, "wb") as f:
                 cloudpickle.dump(model_host, f)
 
             # Measure and publish model size and training time
@@ -178,13 +178,13 @@ class EdgeReservoirNode(Node):
             start = time.perf_counter()
             pred = model.run(last_input)
             end = time.perf_counter()
-            timings.append(end - start)
+            jnp.append(timings,[end - start])
             predictions.append(pred.ravel())
             last_input = pred
 
         avg_time = jnp.mean(timings)
-        min_time = jnp.min(timings)
-        max_time = jnp.max(timings)
+        min_time = jnp.minimum(timings)
+        max_time = jnp.maximum(timings)
 
         self.get_logger().info(
             f"Prediction time (per step): avg {avg_time*1000:.3f} ms | min {min_time*1000:.3f} ms | max {max_time*1000:.3f} ms"
