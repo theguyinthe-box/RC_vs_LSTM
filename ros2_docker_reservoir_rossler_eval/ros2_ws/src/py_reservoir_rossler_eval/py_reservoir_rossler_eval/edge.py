@@ -3,7 +3,7 @@ from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray, String
 import jax
 import jax.numpy as jnp
-from reservoirpy.jax_respy.nodes import Reservoir, Ridge
+from reservoirpy.jax_respy.nodes import Reservoir, Ridge, Model
 from reservoirpy import set_seed
 #import joblib
 import cloudpickle
@@ -173,9 +173,8 @@ class EdgeReservoirNode(Node):
         predictions = jnp.array([])
         last_input = X[-1].reshape(1, -1)
         timings = jnp.array([])
-        self.get_logger().info(f"prediction and time var instantiated")
+
         for _ in range(test.shape[0]):
-            self.get_logger().info(f"in pred loop")
             start = time.perf_counter()
             pred = model.run(last_input)
             end = time.perf_counter()
@@ -185,8 +184,8 @@ class EdgeReservoirNode(Node):
 
         self.get_logger().info(f"out pred loop")
         avg_time = jnp.mean(timings)
-        min_time = jnp.minimum(timings)
-        max_time = jnp.maximum(timings)
+        min_time = jnp.min(timings)
+        max_time = jnp.max(timings)
 
         self.get_logger().info(
             f"Prediction time (per step): avg {avg_time*1000:.3f} ms | min {min_time*1000:.3f} ms | max {max_time*1000:.3f} ms"
