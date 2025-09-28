@@ -38,7 +38,7 @@ def train_and_generate(params, X_train, Y_train, scaler, predict_len, test, test
     esn = reservoir >> readout
 
     start_fit = time.perf_counter()
-    esn = esn.fit(X_train, Y_train, warmup=100, reset=True)
+    esn = esn.fit(X_train, Y_train, warmup=100)
     end_fit = time.perf_counter()
     fit_time = end_fit - start_fit
 

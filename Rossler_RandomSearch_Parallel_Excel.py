@@ -1,9 +1,10 @@
-import numpy as np
+import jax
+import jax.numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error
-from reservoirpy.nodes import Reservoir, Ridge
+from reservoirpy.jax.nodes import Reservoir, Ridge
 from reservoirpy import set_seed
 from itertools import product
 from joblib import Parallel, delayed
@@ -55,7 +56,7 @@ def train_and_generate(params, X_train, Y_train, scaler, predict_len, test, test
     esn = reservoir >> readout
 
     start_fit = time.perf_counter()
-    esn = esn.fit(X_train, Y_train, warmup=100, reset=True)
+    esn = esn.fit(X_train, Y_train, warmup=100)
     end_fit = time.perf_counter()
     fit_time = end_fit - start_fit
 
