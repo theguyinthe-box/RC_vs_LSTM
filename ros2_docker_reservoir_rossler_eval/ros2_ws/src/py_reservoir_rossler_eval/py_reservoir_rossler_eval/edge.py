@@ -6,8 +6,8 @@ import jax.numpy as jnp
 import reservoirpy.jax_respy.model
 from reservoirpy.jax_respy.nodes import Reservoir, Ridge
 from reservoirpy import set_seed
-import joblib
-#import cloudpickle
+#import joblib
+import cloudpickle
 import time
 import os
 import json
@@ -154,10 +154,10 @@ class EdgeReservoirNode(Node):
             model = model.fit(X, Y, warmup=100)#, reset=True) deprecated reset in modern respy new function resets by default
             training_duration = time.perf_counter() - start_time
 
-            joblib.dump(model, self.model_path)
-            # model_host = jax.device_get(model)    # convert DeviceArrays -> numpy arrays on host
-            # with open(self.model_path, "wb") as f:
-            #     cloudpickle.dump(model_host, f)
+            # joblib.dump(model, self.model_path)
+            model_host = jax.device_get(model)    # convert DeviceArrays -> numpy arrays on host
+            with open(self.model_path, "wb") as f:
+                cloudpickle.dump(model_host, f)
 
             # Measure and publish model size and training time
             training_time_msg = String()
