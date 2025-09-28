@@ -3,7 +3,7 @@ from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray, String
 import jax
 import jax.numpy as jnp
-from reservoirpy.jax_respy.nodes import Reservoir, Ridge, Model
+from reservoirpy.jax_respy.nodes import Reservoir, Ridge
 from reservoirpy import set_seed
 #import joblib
 import cloudpickle
