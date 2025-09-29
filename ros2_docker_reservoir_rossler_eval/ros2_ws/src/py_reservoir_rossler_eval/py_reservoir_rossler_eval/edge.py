@@ -18,7 +18,7 @@ class EdgeReservoirNode(Node):
         super().__init__('edge_reservoir_rossler_node')
         self.set_seed(42)
 
-        self.get_logger().info(jax.devices())
+        self.get_logger().info(f"{jax.devices()}")
 
         # Store hyperparameters
         self.reservoir_params = {
