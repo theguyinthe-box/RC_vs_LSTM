@@ -153,7 +153,6 @@ class EdgeReservoirNode(Node):
             model = reservoir >> readout
 
             start_time = time.perf_counter()
-            model.reset()
             model = model.fit(X, Y, warmup=100, workers=-1)#, reset=True) deprecated reset in respy0.4.1 current resets by default
             training_duration = time.perf_counter() - start_time
 
