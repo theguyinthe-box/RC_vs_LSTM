@@ -177,11 +177,13 @@ class EdgeReservoirNode(Node):
         predictions = jnp.array([])
         last_input = X[-1].reshape(1, -1)
         timings = jnp.array([])
+        
         model.reset()
+        model.run(X[-100:], workers=-1)
 
         for _ in range(test.shape[0]):
             start = time.perf_counter()
-            pred = model(last_input, workers=-1)
+            pred = model(last_input)
             end = time.perf_counter()
             timings = jnp.append(timings, end - start)
             predictions = jnp.append(predictions, pred.ravel())
