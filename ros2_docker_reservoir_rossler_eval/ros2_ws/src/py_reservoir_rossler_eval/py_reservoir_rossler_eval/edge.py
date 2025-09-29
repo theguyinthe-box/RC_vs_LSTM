@@ -153,7 +153,7 @@ class EdgeReservoirNode(Node):
             model = reservoir >> readout
 
             start_time = time.perf_counter()
-            model = model.fit(X, Y, warmup=100, workers=-1)#, reset=True) deprecated reset in respy0.4.1 current resets by default
+            model = model.fit(X, Y, warmup=100, reset=True, workers=-1)#, reset=True) deprecated reset in respy0.4.1 current resets by default
             training_duration = time.perf_counter() - start_time
 
             #joblib.dump(model, self.model_path)
@@ -176,24 +176,23 @@ class EdgeReservoirNode(Node):
         # Autoregressive prediction & timing
         predictions = jnp.array([])
         last_input = X[-1].reshape(1, -1)
-        timings = jnp.array([])
+        #timings = jnp.array([])
 
         for _ in range(test.shape[0]):
             start = time.perf_counter()
             pred = model.run(last_input, workers=-1)
-            model.reset()
             end = time.perf_counter()
-            timings = jnp.append(timings, end - start)
+            #timings = jnp.append(timings, end - start)
             predictions = jnp.append(predictions, pred.ravel())
             last_input = pred
 
         
-        avg_time = jnp.mean(timings)
-        min_time = jnp.min(timings)
-        max_time = jnp.max(timings)
+        avg_time = (end-start)/test.shape[0] #jnp.mean(timings)
+        #min_time = jnp.min(timings)
+        #max_time = jnp.max(timings)
 
         self.get_logger().info(
-            f"Prediction time (per step): avg {avg_time*1000:.3f} ms | min {min_time*1000:.3f} ms | max {max_time*1000:.3f} ms"
+            f"Prediction time (per step): avg {avg_time*1000:.3f} ms"  #| min {min_time*1000:.3f} ms | max {max_time*1000:.3f} ms"
         )
 
         # Publish predictions + timings
