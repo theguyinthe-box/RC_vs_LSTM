@@ -177,9 +177,9 @@ class EdgeReservoirNode(Node):
         predictions = jnp.array([])
         last_input = X[-1].reshape(1, -1)
         timings = jnp.array([])
-        
+
         model.reset()
-        model.run(X[-100:], workers=-1)
+        model.run(X[-100:].reshape(1,-1), workers=-1)
 
         for _ in range(test.shape[0]):
             start = time.perf_counter()
