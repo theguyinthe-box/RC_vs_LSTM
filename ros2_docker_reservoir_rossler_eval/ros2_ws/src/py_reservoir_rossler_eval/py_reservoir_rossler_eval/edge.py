@@ -6,8 +6,8 @@ import jax.numpy as jnp
 import reservoirpy.jax_respy.model
 from reservoirpy.jax_respy.nodes import Reservoir, Ridge
 from reservoirpy import set_seed
-#import joblib
-import cloudpickle
+import joblib
+#import cloudpickle
 import time
 import os
 import json
@@ -17,6 +17,8 @@ class EdgeReservoirNode(Node):
     def __init__(self):
         super().__init__('edge_reservoir_rossler_node')
         self.set_seed(42)
+
+        self.get_logger().info(jax.devices())
 
         # Store hyperparameters
         self.reservoir_params = {
@@ -147,11 +149,13 @@ class EdgeReservoirNode(Node):
                 lr=self.reservoir_params["leaking_rate"],
                 input_scaling=self.reservoir_params["input_scaling"]
             )
+            self.get_logger().info("No model found. Starting training...")
             readout = Ridge(ridge=self.readout_params["ridge_alpha"])
             model = reservoir >> readout
 
+            self.get_logger().info("No model found. Starting training...")
             start_time = time.perf_counter()
-            model = model.fit(X, Y, warmup=100)#, reset=True) deprecated reset in modern respy new function resets by default
+            model = model.fit(X, Y, warmup=100)#, reset=True) deprecated reset in respy0.4.1 current resets by default
             training_duration = time.perf_counter() - start_time
 
             # joblib.dump(model, self.model_path)
