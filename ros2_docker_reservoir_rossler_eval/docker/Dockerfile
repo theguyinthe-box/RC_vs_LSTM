@@ -1,4 +1,6 @@
 # Choose the base image
+
+
 FROM ros:humble
 
 # Install required packages
@@ -8,10 +10,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 
-RUN pip install rservoirpy jax scikit-learn asciichartpy pandas openpyxl
+RUN pip install reservoirpy jax scikit-learn asciichartpy pandas openpyxl
     
 # Make container cuda compatible with jax
-RUN pip install 
 RUN pip install -U "jax[cuda12]"
 
 # Make local reservoirpy package available to Python without pip
