@@ -157,6 +157,7 @@ class EdgeReservoirNode(Node):
             training_duration = time.perf_counter() - start_time
 
             #joblib.dump(model, self.model_path)
+            self.get_logger().info(f"saving model")
             model_host = jax.device_get(model)    # convert DeviceArrays -> numpy arrays on host
             with open(self.model_path, "wb") as f:
                 cloudpickle.dump(model_host, f)
