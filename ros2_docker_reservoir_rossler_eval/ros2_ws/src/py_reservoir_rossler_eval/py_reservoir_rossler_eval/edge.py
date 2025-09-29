@@ -180,7 +180,7 @@ class EdgeReservoirNode(Node):
 
         for _ in range(test.shape[0]):
             start = time.perf_counter()
-            pred = model.run (last_input, workers=-1)
+            pred = model.run(last_input, workers=-1)
             model.reset()
             end = time.perf_counter()
             timings = jnp.append(timings, end - start)
