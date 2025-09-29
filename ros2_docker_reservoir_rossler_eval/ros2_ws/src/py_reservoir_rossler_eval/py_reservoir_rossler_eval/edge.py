@@ -200,7 +200,7 @@ class EdgeReservoirNode(Node):
         msg_out = Float32MultiArray()
         msg_out.data = jnp.concatenate([pred_array.flatten(), timings]).tolist()
         self.publisher.publish(msg_out)
-        self.get_logger().info(f"Published {len(pred_array)} predictions and {len(timings)} per-step latencies to Agent.")
+        #self.get_logger().info(f"Published {len(pred_array)} predictions and {len(timings)} per-step latencies to Agent.")
 
     def set_seed(self, seed):
         set_seed(seed)
