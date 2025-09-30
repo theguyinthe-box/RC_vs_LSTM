@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 
-RUN pip install reservoirpy scikit-learn asciichartpy pandas openpyxl cloudpickle
+RUN pip install reservoirpy jax scikit-learn asciichartpy pandas openpyxl cloudpickle
     
 # Make container cuda compatible with jax
 RUN pip install "jax[cuda12.14]"
