@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     python3-colcon-common-extensions \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install reservoirpy jax scikit-learn asciichartpy pandas openpyxl cloudpickle 
+RUN pip install reservoirpy jax scikit-learn asciichartpy pandas openpyxl cloudpickle nvidia-cudnn-cu12
    
 # Make container cuda compatible with jax
 RUN pip install "jax[cuda12]"
