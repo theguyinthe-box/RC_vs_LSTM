@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray, String
 import jax
-import jax.numpy as jnp
+import numpy as np
 from scipy.integrate import solve_ivp
 from sklearn.preprocessing import StandardScaler
 import time
@@ -50,7 +50,7 @@ class AgentNode(Node):
         return [-y - z, x + a * y, b + z * (x - c)]
 
     def prepare_data(self):
-        t_eval = jnp.arange(0, 200, 0.02)
+        t_eval = np.arange(0, 200, 0.02)
         sol = solve_ivp(self.rossler, (0, 200), [0.1, 0, 0], t_eval=t_eval)
         data = sol.y.T
 
@@ -124,7 +124,7 @@ class AgentNode(Node):
     def send_data(self):
         if self.publisher.get_subscription_count() > 0:
             msg = Float32MultiArray()
-            msg.data = jnp.concatenate([
+            msg.data = np.concatenate([
                 self.X_scaled.flatten(),
                 self.Y_scaled.flatten(),
                 self.test_scaled.flatten()
@@ -143,7 +143,7 @@ class AgentNode(Node):
         receive_time = time.perf_counter()
         roundtrip_time_s = receive_time - self.send_time if self.send_time is not None else float('nan')
 
-        data = jnp.array(msg.data, dtype=jnp.float32)
+        data = np.array(msg.data, dtype=np.float32)
         n_pred = self.pred_len * 3
 
         if data.size < n_pred:
@@ -174,7 +174,7 @@ class AgentNode(Node):
         # Warm-up phase
         if self.run_count < self.warmup_runs and self.logger is not None:
             warmup_index = self.run_count + 1
-            avg_pred_ms = jnp.mean(pred_times_data) * 1e3 if len(pred_times_data) > 0 else float("nan")
+            avg_pred_ms = np.mean(pred_times_data) * 1e3 if len(pred_times_data) > 0 else float("nan")
             self.logger.log_warmup(warmup_index, roundtrip_time_s)
             self.get_logger().info(
                 f"Warm-up {warmup_index} done. "
@@ -190,7 +190,7 @@ class AgentNode(Node):
             self.get_logger().info(
                 f"Run {run_index} done. MSE: {mse:.6f} | "
                 f"Roundtrip: {roundtrip_time_s*1000:.2f} ms | "
-                f"Avg pred step: {jnp.mean(pred_times_data)*1e3:.3f} ms"
+                f"Avg pred step: {np.mean(pred_times_data)*1e3:.3f} ms"
             )
 
         self.run_count += 1

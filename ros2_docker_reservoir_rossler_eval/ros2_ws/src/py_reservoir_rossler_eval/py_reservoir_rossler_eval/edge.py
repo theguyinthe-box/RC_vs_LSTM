@@ -3,6 +3,7 @@ from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray, String
 import jax
 import jax.numpy as jnp
+import numpy as np
 import reservoirpy.jax.model
 from reservoirpy.jax.nodes import Reservoir, Ridge
 from reservoirpy import set_seed
@@ -124,6 +125,9 @@ class EdgeReservoirNode(Node):
     def handle_input(self, msg):
         self.set_seed(42)
         data = jnp.array(msg.data)
+
+        jax.device_put(data)
+
         expected_length = (self.train_len + self.train_len + self.pred_len) * 3
         if data.size != expected_length:
             self.get_logger().error(f"Unexpected input data length: {data.size}, expected: {expected_length}")
@@ -139,6 +143,7 @@ class EdgeReservoirNode(Node):
             #model = joblib.load(self.model_path)
             with open(self.model_path, "rb") as f:
                  model = cloudpickle.load(f)
+                 jax.device_put(model)
 
         else:
             self.get_logger().info("No model found. Starting training...")
@@ -151,13 +156,14 @@ class EdgeReservoirNode(Node):
             )
             readout = Ridge(ridge=self.readout_params["ridge_alpha"])
             model = reservoir >> readout
+            jax.device_put(model)
 
             start_time = time.perf_counter()
-            model = model.fit(X, Y, warmup=100, workers=-1)#, reset=True) deprecated reset in respy0.4.1 current resets by default
+            model = model.fit(X, Y, warmup=100)#, reset=True) deprecated reset in respy0.4.1 current resets by default
             training_duration = time.perf_counter() - start_time
 
             #joblib.dump(model, self.model_path)
-            self.get_logger().info(f"saving model")
+            self.get_logger().info(f"Saving model")
             model_host = jax.device_get(model)    # convert DeviceArrays -> numpy arrays on host
             with open(self.model_path, "wb") as f:
                 cloudpickle.dump(model_host, f)
@@ -174,31 +180,33 @@ class EdgeReservoirNode(Node):
             self.get_logger().info(f"Model size published: {model_size_mb:.6f} MB")
 
         # Autoregressive prediction & timing
-        predictions = jnp.array([])
+        
         last_input = X[-1].reshape(1, -1)
-        timings = jnp.array([])
+        jax.device_put(last_input)
+        predictions = np.array([])
+        timings = np.array([])
 
         for _ in range(test.shape[0]):
             start = time.perf_counter()
             pred = model.run(last_input, iters=1, workers=-1)
             end = time.perf_counter()
-            timings = jnp.append(timings, end - start)
-            predictions = jnp.append(predictions, pred.ravel())
+            timings = np.append(timings, end - start)
+            predictions = np.append(predictions, pred.ravel())
             last_input = pred
 
         
-        avg_time = (end-start)/test.shape[0] #jnp.mean(timings)
-        min_time = jnp.min(timings)
-        max_time = jnp.max(timings)
+        avg_time = np.mean(timings) #jnp.mean(timings)
+        min_time = np.min(timings)
+        max_time = np.max(timings)
 
         self.get_logger().info(
             f"Prediction time (per step): avg {avg_time*1000:.3f} ms | min {min_time*1000:.3f} ms | max {max_time*1000:.3f} ms"
         )
 
         # Publish predictions + timings
-        pred_array = jnp.array(predictions)
+        pred_array = np.array(predictions)
         msg_out = Float32MultiArray()
-        msg_out.data = jnp.concatenate([pred_array.flatten(), timings]).tolist()
+        msg_out.data = np.concatenate([pred_array.flatten(), timings]).tolist()
         self.publisher.publish(msg_out)
         self.get_logger().info(f"Published {len(pred_array)} predictions and {len(timings)} per-step latencies to Agent.")
 
