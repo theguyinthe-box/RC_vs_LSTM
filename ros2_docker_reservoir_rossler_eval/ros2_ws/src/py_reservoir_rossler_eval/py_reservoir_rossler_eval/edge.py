@@ -143,7 +143,6 @@ class EdgeReservoirNode(Node):
             #model = joblib.load(self.model_path)
             with open(self.model_path, "rb") as f:
                  model = cloudpickle.load(f)
-                 jax.device_put(model)
 
         else:
             self.get_logger().info("No model found. Starting training...")
@@ -156,7 +155,6 @@ class EdgeReservoirNode(Node):
             )
             readout = Ridge(ridge=self.readout_params["ridge_alpha"])
             model = reservoir >> readout
-            jax.device_put(model)
 
             start_time = time.perf_counter()
             model = model.fit(X, Y, warmup=100)#, reset=True) deprecated reset in respy0.4.1 current resets by default
