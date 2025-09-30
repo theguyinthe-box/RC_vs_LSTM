@@ -5,11 +5,12 @@ FROM ros:humble
 
 # Install required packages
 RUN apt-get update && apt-get install -y \
+    cudnn9-cuda-12 \
     python3-pip \
     python3-colcon-common-extensions \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install reservoirpy jax scikit-learn asciichartpy pandas openpyxl cloudpickle nvidia-cudnn  
+RUN pip install reservoirpy jax scikit-learn asciichartpy pandas openpyxl cloudpickle 
    
 # Make container cuda compatible with jax
 RUN pip install "jax[cuda12]"
