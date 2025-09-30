@@ -5,7 +5,6 @@ FROM ros:humble
 
 # Install required packages
 RUN apt-get update && apt-get install -y \
-    cudnn9-cuda-12 \
     python3-pip \
     python3-colcon-common-extensions \
     && rm -rf /var/lib/apt/lists/*
