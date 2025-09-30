@@ -169,7 +169,7 @@ class AgentNode(Node):
             )
             return
 
-        mse = jnp.mean((self.test - output) ** 2)
+        mse = np.mean((self.test - output) ** 2)
 
         # Warm-up phase
         if self.run_count < self.warmup_runs and self.logger is not None:
