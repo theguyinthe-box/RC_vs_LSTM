@@ -4,7 +4,7 @@ from std_msgs.msg import Float32MultiArray, String
 import jax
 import jax.numpy as jnp
 import numpy as np
-import reservoirpy.jax.model
+import reservoirpy.jax.model as model
 from reservoirpy.jax.nodes import Reservoir, Ridge
 from reservoirpy import set_seed
 #import joblib
@@ -124,6 +124,7 @@ class EdgeReservoirNode(Node):
 
     def handle_input(self, msg):
         self.set_seed(42)
+
         data = jnp.array(msg.data)
 
         jax.device_put(data)
