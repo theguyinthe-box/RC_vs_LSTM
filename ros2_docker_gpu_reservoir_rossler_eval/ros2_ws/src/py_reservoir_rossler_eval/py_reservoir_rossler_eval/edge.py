@@ -245,6 +245,52 @@ class EdgeReservoirNode(Node):
             self.model_size_pub.publish(msg)
             self.get_logger().info(f"Model size published: {size_mb:.6f} MB")
 
+    def handle_control(self, msg: String):
+        cmd = msg.data.strip().upper()
+        if cmd == "NEXT":
+            self.get_logger().info("➡️  NEXT empfangen – nächste LSTM-Hyperparameterzeile laden.")
+            self.load_next_hyperparams()
+        elif cmd == "RETRY":
+            self.get_logger().info("🔁 RETRY empfangen – aktuelle Hyperparameter erneut senden.")
+            self.sent_params = False
+        else:
+            self.get_logger().warn(f"Unbekannter Control-Command: {cmd}")
+    
+    def load_next_hyperparams(self):
+        try:
+            row = next(self.hp_iter)
+        except StopIteration:
+            self.get_logger().info("🎉 Keine weiteren Hyperparameterzeilen (LSTM).")
+            # Optional: DONE an Agent signalisieren
+            if self.param_pub.get_subscription_count() > 0:
+                self.param_pub.publish(String(data=json.dumps({"done": True, "model": "LSTM"})))
+            return
+
+        # Erwartete Spalten: hidden_size, num_layers, lr, sequence_length
+        lp = self.model_params
+        tp = self.training_params
+        def _get(key, cast, default):
+            try:
+                v = row.get(key, default)
+                return default if v is None or v=="" else cast(v)
+            except Exception:
+                return default
+
+        self.model_params["hidden_size"] = _get("hidden_size", int, lp["hidden_size"])
+        self.model_params["num_layers"]  = _get("num_layers",  int, lp["num_layers"])
+        self.training_params["lr"]       = _get("lr",          float, tp["lr"])
+        self.training_params["sequence_length"] = _get("sequence_length", int, tp["sequence_length"])
+
+        # Modell-Datei löschen, damit neu trainiert wird
+        try:
+            if os.path.exists(self.runtime_params["model_path"]):
+                os.remove(self.runtime_params["model_path"])
+                self.get_logger().info(f"Altes LSTM-Modell gelöscht: {self.runtime_params['model_path']}")
+        except Exception as e:
+            self.get_logger().warn(f"Konnte LSTM-Modell nicht löschen: {e}")
+
+        self.sent_params = False  # sorgt dafür, dass send_hyperparams_once neu publisht
+
     # ---------------- Main handler ----------------
     def handle_input(self, msg: Float64MultiArray):
         p = self.reservoir_params
