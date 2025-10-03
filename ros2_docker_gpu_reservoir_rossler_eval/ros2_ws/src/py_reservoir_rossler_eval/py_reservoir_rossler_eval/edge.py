@@ -362,7 +362,7 @@ class EdgeReservoirNode(Node):
 
 def main():
     rclpy.init()
-    node = EdgeLSTMNode()
+    node = EdgeReservoirNode()
     rclpy.spin(node)
     rclpy.shutdown()
 
