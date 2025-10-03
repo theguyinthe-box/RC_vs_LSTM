@@ -56,7 +56,7 @@ class Reservoir(nn.Module):
                  bias_scale = 0.1,
                  spectral_radius = 1,
                  det_norm = None,
-                 activation = torch.nn.functional.Tanh(),
+                 activation = torch.nn.functional.tanh(),
                  leak_rate = 1,
                  sparsity = 0,
                  powerlaw_alpha = 1.75,
@@ -200,7 +200,6 @@ class EdgeReservoirNode(Node):
         self.model_size_pub = self.create_publisher(String, 'size_model', 10)
 
         self.get_logger().info("Edge reservoir node ready and waiting for Rössler input.")
-
         self.create_timer(0.5, self.send_hyperparams_once)
 
     def send_hyperparams_once(self):
