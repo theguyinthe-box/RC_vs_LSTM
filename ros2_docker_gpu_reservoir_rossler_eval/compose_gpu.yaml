@@ -1,0 +1,38 @@
+services:
+  agent:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    deploy:  
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['0']
+              capabilities: [gpu]
+    command: ["/entrypoints/agent_entrypoint.sh"]
+    volumes:
+      - ./results:/results
+    networks:
+      - ros_docker_reservoir_rossler_eval
+
+  edge:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    deploy:  
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['0']
+              capabilities: [gpu]
+    command: ["/entrypoints/edge_entrypoint.sh"]
+    volumes:
+      - ./hyperparams.xlsx:/hyperparams.xlsx:ro
+    networks:
+      - ros_docker_reservoir_rossler_eval
+
+networks:
+  ros_docker_reservoir_rossler_eval:
+    name: ros_reservoir_rossler_eval
