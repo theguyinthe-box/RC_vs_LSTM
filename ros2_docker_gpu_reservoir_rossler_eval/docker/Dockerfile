@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     python3-colcon-common-extensions \
     && rm -rf /var/lib/apt/lists/*
 
-pip install torch scikit-learn asciichartpy pandas openpyxl tqdm
+RUN pip install torch scikit-learn asciichartpy pandas openpyxl tqdm
 
 # Make local reservoirpy package available to Python without pip
 # Copy the folder into the image and add it to PYTHONPATH so `import reservoirpy` works

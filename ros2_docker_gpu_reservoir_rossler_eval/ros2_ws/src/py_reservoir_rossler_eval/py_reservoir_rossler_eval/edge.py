@@ -4,8 +4,9 @@ from std_msgs.msg import Float64MultiArray, String
 import numpy as np
 import tqdm as tqdm
 import torch
-import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
+import torch.nn as nn
+from torch.nn.utils.parametrizations import orthogonal, _make_orthogonal
 import os
 import time
 import json
@@ -19,7 +20,8 @@ def powerlaw_random(dim, alpha = 1.75, x_min = 1):
     out = x_min * (1 - rands) ** (-1 / (alpha - 1))
     return out
 
-def random_powerlaw_matrix(dim, out_dim = None,
+def random_powerlaw_matrix(dim, 
+                           out_dim = None,
                            alpha = 1.75,
                            x_min = 0.1,
                            normalize_det_to = None,
@@ -41,106 +43,121 @@ def random_powerlaw_matrix(dim, out_dim = None,
     negative_mask = torch.rand(out_dim) > 0.5
     diagonal[negative_mask] = -diagonal[negative_mask]
     matrix = torch.diag(diagonal)
-
     sparsity = min(1, sparsity)
     rot = _make_orthogonal(torch.randn(out_dim, dim) * (torch.rand(out_dim, dim) > sparsity))
     return rot.T @ matrix @ rot
 
 class Reservoir(nn.Module):
-    def __init__(self, units,
+    def __init__(self, res_dim,
+                 input_dim = None,
+                 ouput_dim = None,
                  weight = None,
                  bias = True,
                  bias_scale = 0.1,
                  spectral_radius = 1,
                  det_norm = None,
-                 activation = torch.nn.Tanh(),
-                 leaking_rate = 1,
+                 activation = torch.nn.functional.Tanh(),
+                 leak_rate = 1,
                  sparsity = 0,
                  powerlaw_alpha = 1.75,
+                 seed = 42,
                  **activation_kwargs):  
+        
         super.__init__()
+        self.seed = seed
+
+        # instantiate random weight matrix
         if weight is None:
-            weight = random_powerlaw_matrix(units,
+            weight = random_powerlaw_matrix(res_dim,
                                             alpha = powerlaw_alpha,
                                             normalize_radius_to = spectral_radius,
                                             normalize_det_to = det_norm,
                                             sparsity = sparsity)
-        if bias:
-            initial_bias = 2 * torch.rand(units) - 1
+            initial_bias = 2 * torch.rand(res_dim) - 1
             bias_sum = initial_bias.sum()
-            initial_bias -= bias_sum / units
+            initial_bias -= bias_sum / res_dim
             bias = initial_bias * bias_scale
             self.register_buffer("bias", bias)
         else:
-            self.register_buffer("bias", torch.zeros(units))
+            self.register_buffer("bias", torch.zeros(res_dim))
         self.register_buffer("weight", weight)
-        # persistent around -2.375, growing attractor after
-        self.leaking_rate = leaking_rate
+
+        #instantiate random adjacency matrix
+        self.adjacency = np.random.randint(2,size=(res_dim,res_dim))
+        
+        #leak rate $\gamma
+        self.leak_rate = leak_rate
+        #activation function plus kwargs for activation function
         self.activation = activation(**activation_kwargs)
+        #prev output of all nodes
+        self.state = np.zeroes((res_dim,res_dim), dtype=np.float64)
 
     def forward(self, x, n_steps = 1):
         with torch.no_grad():
             for _ in range(n_steps):
                 y = x @ self.weight + self.bias
-                y = torch.nn.functional.tanh(y)
-                y = self.activation(y)
+                y = (1-self.leak_rate)* self.state \
+                    + self.leak_rate*self.activation(y)
+                self.state = y
         return y
 
-    def train(projection, net, readout, data, device,
-          n_epochs = 1, batch_size = 512, lr= 1e-2,
-          n_steps = 30):
-        """
-        Training the readout of the reservoir.
-        """
-        pbar = tqdm(range(len(data) * n_epochs // batch_size))
-        accuracies = []
+    ## does this really do what I want it to do???
 
-        optimizer = torch.optim.SGD(readout.parameters(),
-                                    lr = lr)
+    # def train(projection, net, readout, data, device,
+    #       n_epochs = 1, batch_size = 512, lr= 1e-2,
+    #       n_steps = 30):
+    #     """
+    #     Training the readout of the reservoir.
+    #     """
+    #     pbar = tqdm(range(len(data) * n_epochs // batch_size))
+    #     accuracies = []
 
-        for epoch in range(n_epochs):
-            train_loader = torch.utils.data.DataLoader(data,
-                                                       batch_size = batch_size,
-                                                       shuffle = True)
-            for i, (x, y) in enumerate(train_loader):
-                optimizer.zero_grad()
-                x = x.to(device)
-                y = y.to(device)
+    #     optimizer = torch.optim.SGD(readout.parameters(),
+    #                                 lr = lr) ## this is the only step really needed though.
 
-                x = projection(x)
-                # detach and clone ensures no training until after
-                state = net(x, n_steps = n_steps).detach().clone().requires_grad_(True)
-                y_hat = readout(state)
+    #     for epoch in range(n_epochs):
+    #         train_loader = torch.utils.data.DataLoader(data,
+    #                                                    batch_size = batch_size,
+    #                                                    shuffle = True)
+    #         for i, (x, y) in enumerate(train_loader):
+    #             optimizer.zero_grad()
+    #             x = x.to(device)
+    #             y = y.to(device)
 
-                y_out = torch.argmax(y_hat, dim = 1)
-                loss = torch.nn.functional.cross_entropy(y_hat, y)
-                loss.backward()
-                optimizer.step()
+    #             x = projection(x)
+    #             # detach and clone ensures no training until after
+    #             state = net(x, n_steps = n_steps).detach().clone().requires_grad_(True)
+    #             y_hat = readout(state)
 
-                acc = (y_out == y).float().mean()
-                accuracies.append(acc.item())
+    #             y_out = torch.argmax(y_hat, dim = 1)
+    #             loss = torch.nn.functional.cross_entropy(y_hat, y) ##this makes sense, but only across the readout
+
+    #             loss.backward()  ##there shouldn't be any backprop
+    #             optimizer.step()
+
+    #             acc = (y_out == y).float().mean()
+    #             accuracies.append(acc.item())
                 
-                pbar.update(1)
+    #             pbar.update(1)
         
-        return accuracies
+    #     return accuracies
 
 class EdgeReservoirNode(Node):
     def __init__(self):
         super().__init__('edge_reservoir_rossler_node')
-        self.set_seed(42)
 
         # Store hyperparameters
         self.reservoir_params = {
             "input_size": 3,
             "output_size": 3,
-            "units": 500,
+            "dim": 500,
             "spectral_radius": 1.6,
-            "leaking_rate": 0.3,
+            "leak_rate": 0.3,
             "input_scaling": 0.1
         }
         self.training_params = {
             "sequence_length": 20,
-            "lr": 0.0005,
+            "lr": 0.001,
             "epochs": 50,
             "batch_size": 64,
         }
@@ -256,10 +273,9 @@ class EdgeReservoirNode(Node):
             self.model = Reservoir(
                 input_size = p["input_size"],
                 output_size = p["output_size"],
-                units = p["units"],
+                res_dim = p["units"],
                 spectral_radius = p["spectral_radius"],
-                leaking_rate = p["leaking_rate"],
-                input_scaling = p["input_scaling"]
+                lr = p["leaking_rate"]
             ).to(self.device)
 
             self.model.load_state_dict(torch.load(model_path, map_location=self.device))
@@ -280,10 +296,9 @@ class EdgeReservoirNode(Node):
             self.model = Reservoir(
                 input_size = p["input_size"],
                 output_size = p["output_size"],
-                units = p["units"],
+                res_dim = p["units"],
                 spectral_radius = p["spectral_radius"],
-                leaking_rate = p["leaking_rate"],
-                input_scaling = p["input_scaling"]
+                leaking_rate = p["leaking_rate"]
             ).to(self.device)
 
             # build sequences
