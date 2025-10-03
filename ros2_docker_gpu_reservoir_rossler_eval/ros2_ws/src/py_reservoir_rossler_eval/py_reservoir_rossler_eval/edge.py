@@ -267,7 +267,7 @@ class EdgeReservoirNode(Node):
             return
 
         # Erwartete Spalten: hidden_size, num_layers, lr, sequence_length
-        lp = self.model_params
+        lp = self.reservoir_params
         tp = self.training_params
         def _get(key, cast, default):
             try:
