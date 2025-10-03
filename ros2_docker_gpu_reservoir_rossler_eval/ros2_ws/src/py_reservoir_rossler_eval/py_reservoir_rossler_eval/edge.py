@@ -47,6 +47,15 @@ def random_powerlaw_matrix(dim,
     rot = _make_orthogonal(torch.randn(out_dim, dim) * (torch.rand(out_dim, dim) > sparsity))
     return rot.T @ matrix @ rot
 
+class ScaledTanh(torch.nn.Module):
+    def __init__(self, alpha = 1):
+        super().__init__()
+        self.alpha = alpha
+
+    def forward(self, x):
+        x = torch.nn.functional.tanh(x)
+        return self.alpha * x
+
 class Reservoir(nn.Module):
     def __init__(self, res_dim,
                  input_dim = None,
@@ -56,7 +65,7 @@ class Reservoir(nn.Module):
                  bias_scale = 0.1,
                  spectral_radius = 1,
                  det_norm = None,
-                 activation = torch.nn.functional.tanh(),
+                 activation = ScaledTanh,
                  leak_rate = 1,
                  sparsity = 0,
                  powerlaw_alpha = 1.75,
