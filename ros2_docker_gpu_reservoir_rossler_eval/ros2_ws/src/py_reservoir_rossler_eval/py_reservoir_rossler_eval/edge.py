@@ -276,8 +276,8 @@ class EdgeReservoirNode(Node):
             except Exception:
                 return default
 
-        self.model_params["hidden_size"] = _get("hidden_size", int, lp["hidden_size"])
-        self.model_params["num_layers"]  = _get("num_layers",  int, lp["num_layers"])
+        self.reservoir_params["hidden_size"] = _get("hidden_size", int, lp["hidden_size"])
+        self.reservoir_params["num_layers"]  = _get("num_layers",  int, lp["num_layers"])
         self.training_params["lr"]       = _get("lr",          float, tp["lr"])
         self.training_params["sequence_length"] = _get("sequence_length", int, tp["sequence_length"])
 
