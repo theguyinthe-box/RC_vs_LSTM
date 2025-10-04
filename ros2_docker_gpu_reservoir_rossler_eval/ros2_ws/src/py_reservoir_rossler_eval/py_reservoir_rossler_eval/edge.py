@@ -58,8 +58,8 @@ class ScaledTanh(torch.nn.Module):
 
 class Reservoir(nn.Module):
     def __init__(self, res_dim,
-                 input_dim = None,
-                 ouput_dim = None,
+                #  input_dim = None,
+                #  ouput_dim = None,
                  weight = None,
                  bias = True,
                  bias_scale = 0.1,
@@ -112,44 +112,44 @@ class Reservoir(nn.Module):
 
     ## does this really do what I want it to do???
 
-    # def train(projection, net, readout, data, device,
-    #       n_epochs = 1, batch_size = 512, lr= 1e-2,
-    #       n_steps = 30):
-    #     """
-    #     Training the readout of the reservoir.
-    #     """
-    #     pbar = tqdm(range(len(data) * n_epochs // batch_size))
-    #     accuracies = []
+    def training(projection, net, readout, data, device,
+                 n_epochs = 1, batch_size = 512, lr= 1e-2,
+                 n_steps = 30):
+        """
+        Training the readout of the reservoir.
+        """
+        pbar = tqdm(range(len(data) * n_epochs // batch_size))
+        accuracies = []
 
-    #     optimizer = torch.optim.SGD(readout.parameters(),
-    #                                 lr = lr) ## this is the only step really needed though.
+        optimizer = torch.optim.SGD(readout.parameters(),
+                                    lr = lr) ## this is the only step really needed though.
 
-    #     for epoch in range(n_epochs):
-    #         train_loader = torch.utils.data.DataLoader(data,
-    #                                                    batch_size = batch_size,
-    #                                                    shuffle = True)
-    #         for i, (x, y) in enumerate(train_loader):
-    #             optimizer.zero_grad()
-    #             x = x.to(device)
-    #             y = y.to(device)
+        for epoch in range(n_epochs):
+            train_loader = torch.utils.data.DataLoader(data,
+                                                       batch_size = batch_size,
+                                                       shuffle = True)
+            for i, (x, y) in enumerate(train_loader):
+                optimizer.zero_grad()
+                x = x.to(device)
+                y = y.to(device)
 
-    #             x = projection(x)
-    #             # detach and clone ensures no training until after
-    #             state = net(x, n_steps = n_steps).detach().clone().requires_grad_(True)
-    #             y_hat = readout(state)
+                x = projection(x)
+                # detach and clone ensures no training until after
+                state = net(x, n_steps = n_steps).detach().clone().requires_grad_(True)
+                y_hat = readout(state)
 
-    #             y_out = torch.argmax(y_hat, dim = 1)
-    #             loss = torch.nn.functional.cross_entropy(y_hat, y) ##this makes sense, but only across the readout
+                y_out = torch.argmax(y_hat, dim = 1)
+                loss = torch.nn.functional.cross_entropy(y_hat, y)
 
-    #             loss.backward()  ##there shouldn't be any backprop
-    #             optimizer.step()
+                loss.backward() 
+                optimizer.step()
 
-    #             acc = (y_out == y).float().mean()
-    #             accuracies.append(acc.item())
+                acc = (y_out == y).float().mean()
+                accuracies.append(acc.item())
                 
-    #             pbar.update(1)
+                pbar.update(1)
         
-    #     return accuracies
+        return accuracies
 
 class EdgeReservoirNode(Node):
     def __init__(self):
@@ -157,12 +157,11 @@ class EdgeReservoirNode(Node):
 
         # Store hyperparameters
         self.reservoir_params = {
-            "input_size": 3,
-            "output_size": 3,
+            # "input_size": 3,
+            # "output_size": 3,
             "dim": 500,
             "spectral_radius": 1.6,
             "leak_rate": 0.3,
-            "input_scaling": 0.1
         }
         self.training_params = {
             "sequence_length": 20,
@@ -260,36 +259,26 @@ class EdgeReservoirNode(Node):
         try:
             row = next(self.hp_iter)
         except StopIteration:
-            self.get_logger().info("🎉 Keine weiteren Hyperparameterzeilen (LSTM).")
-            # Optional: DONE an Agent signalisieren
-            if self.param_pub.get_subscription_count() > 0:
-                self.param_pub.publish(String(data=json.dumps({"done": True, "model": "LSTM"})))
+            self.get_logger().info("🎉 No further hyperparameter rows in the Excel file.")
             return
 
-        # Erwartete Spalten: hidden_size, num_layers, lr, sequence_length
-        lp = self.reservoir_params
-        tp = self.training_params
-        def _get(key, cast, default):
-            try:
-                v = row.get(key, default)
-                return default if v is None or v=="" else cast(v)
-            except Exception:
-                return default
+        # Map Excel columns directly onto the existing dicts.
+        # Keep fallbacks in case some columns are missing.
+        self.reservoir_params = {
+            "units":           int(row.get("units", self.reservoir_params.get("units", 500))),
+            "spectral_radius": float(row.get("spectral_radius", self.reservoir_params.get("spectral_radius", 1.6))),
+            "leaking_rate":    float(row.get("leaking_rate", self.reservoir_params.get("leaking_rate", 0.3))),
+            #"input_scaling":   float(row.get("input_scaling", self.reservoir_params.get("input_scaling", 0.1))),
+        }
+        self.sent_params = False  # For send_hyperparams_once()
 
-        self.reservoir_params["hidden_size"] = _get("hidden_size", int, lp["hidden_size"])
-        self.reservoir_params["num_layers"]  = _get("num_layers",  int, lp["num_layers"])
-        self.training_params["lr"]       = _get("lr",          float, tp["lr"])
-        self.training_params["sequence_length"] = _get("sequence_length", int, tp["sequence_length"])
-
-        # Modell-Datei löschen, damit neu trainiert wird
+        # Remove old model to force retraining:
         try:
-            if os.path.exists(self.runtime_params["model_path"]):
-                os.remove(self.runtime_params["model_path"])
-                self.get_logger().info(f"Altes LSTM-Modell gelöscht: {self.runtime_params['model_path']}")
+            if os.path.exists(self.model_path):
+                os.remove(self.model_path)
+                self.get_logger().info(f"Old model deleted: {self.model_path}")
         except Exception as e:
-            self.get_logger().warn(f"Konnte LSTM-Modell nicht löschen: {e}")
-
-        self.sent_params = False  # sorgt dafür, dass send_hyperparams_once neu publisht
+            self.get_logger().warn(f"Could not delete model: {e}")
 
     # ---------------- Main handler ----------------
     def handle_input(self, msg: Float64MultiArray):
@@ -298,8 +287,8 @@ class EdgeReservoirNode(Node):
         d = self.data_params
         model_path = self.runtime_params["model_path"]
 
-        input_size = p["input_size"]
-        output_size = p["output_size"]
+        # input_size = p["input_size"]
+        # output_size = p["output_size"]
         train_len = d["train_len"]
         pred_len = d["pred_len"]
         seq_len = t["sequence_length"]
@@ -325,8 +314,8 @@ class EdgeReservoirNode(Node):
         if os.path.exists(model_path):
             # 1) build the model first, THEN load weights
             self.model = Reservoir(
-                input_size = p["input_size"],
-                output_size = p["output_size"],
+                # input_size = p["input_size"],
+                # output_size = p["output_size"],
                 res_dim = p["units"],
                 spectral_radius = p["spectral_radius"],
                 lr = p["leaking_rate"]
@@ -348,8 +337,8 @@ class EdgeReservoirNode(Node):
 
             # build model now (deterministic initial weights)
             self.model = Reservoir(
-                input_size = p["input_size"],
-                output_size = p["output_size"],
+                # input_size = p["input_size"],
+                # output_size = p["output_size"],
                 res_dim = p["units"],
                 spectral_radius = p["spectral_radius"],
                 leaking_rate = p["leaking_rate"]
